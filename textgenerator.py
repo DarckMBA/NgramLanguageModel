@@ -27,7 +27,7 @@ def build_model(tokens, n):
 
     return ngram_count, context_count
 
-def generated_text(ngram_count, seed, n, num_words):
+def generate_text(ngram_count, seed, n, num_words):
     generated_text = list(seed)
     for i in range(num_words):
         next_words = [ngram[-1] for ngram in ngram_count if ngram[:-1] == seed]
@@ -41,6 +41,34 @@ def generated_text(ngram_count, seed, n, num_words):
         i += 1
 
     return generated_text
+
+
+# Generate text based on a predefined seed ('i', 'did', 'not')
+def generate_predefined(filepath, n, num_words):
+    with open(filepath, "r", encoding="utf-8") as f:
+        raw = f.read()
+    tokens = tokenize_words(clean(raw))
+
+    ngram_count, ngram_context_count = build_model(tokens, n)
+
+    text = generate_text(ngram_count, ('i', 'did', 'not'), n, num_words)
+
+    print(" ".join(text))
+
+
+# Generate text based on a random seed
+def generate_random(filepath, n, num_words):
+    with open(filepath, "r", encoding="utf-8") as f:
+        raw = f.read()
+    tokens = tokenize_words(clean(raw))
+
+    ngram_count, ngram_context_count = build_model(tokens, n)
+
+    seed = random.choice(list(ngram_count.keys()))[:-1]
+
+    text = generate_text(ngram_count, seed, n, num_words)
+
+    print(" ".join(text))
 
 
 # Print the top 'n' bigrams and trigrams
@@ -73,30 +101,19 @@ def top_bigrams_and_trigrams(filepath, top_n=10):
     print("=" * 50)
 
 
-# Generate text based on a seed
-def generate(filepath, n, num_words):
-    with open(filepath, "r", encoding="utf-8") as f:
-        raw = f.read()
-    tokens = tokenize_words(clean(raw))
-
-    ngram_count, ngram_context_count = build_model(tokens, n)
-
-    text = generated_text(ngram_count, ('i', 'did', 'not'), n, num_words)
-
-    print(" ".join(text))
-
-
 # Command-line arguments
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Predict the next words based on 'n' previous words")
     parser.add_argument("filepath", help="Path to the text file to analyze")
-    parser.add_argument("--function", "-f", choices=["generate", "top",], default="generate", help="Analysis function to run")
+    parser.add_argument("--function", "-f", choices=["generate-predefined", "generate-random", "top",], default="generate-predefined", help="Analysis function to run")
     parser.add_argument("--number", "-n", type=int, default=4, help="Number of the ngrams")
     parser.add_argument("--words", "-w", type=int, default=50, help="Number of words for the generated text")
     
     args = parser.parse_args()
 
-    if args.function == "generate":
-        generate(args.filepath, n=args.number, num_words=args.words)
+    if args.function == "generate-predefined":
+        generate_predefined(args.filepath, n=args.number, num_words=args.words)
+    elif args.function == "generate-random":
+        generate_random(args.filepath, n=args.number, num_words=args.words)
     elif args.function == "top":
         top_bigrams_and_trigrams(args.filepath)
